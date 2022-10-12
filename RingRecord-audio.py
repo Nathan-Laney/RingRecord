@@ -1,11 +1,13 @@
+from collections import deque
 import pyaudio
 import wave
+import cv2
 
 chunk = 1024  # Record in chunks of 1024 samples
 sample_format = pyaudio.paInt16  # 16 bits per sample
 channels = 2
 fs = 44100  # Record at 44100 samples per second
-seconds = 10
+seconds = 5
 filename = "/home/nathan/Videos/RingRecord/output.wav"
 
 # Uses default selected audio device.
@@ -20,12 +22,19 @@ stream = p.open(format=sample_format,
                 frames_per_buffer=chunk,
                 input=True)
 
-frames = []  # Initialize array to store frames
+frames = deque(maxlen=int(fs / chunk * seconds))  # Initialize array to store frames
 
-# Store data in chunks for 3 seconds
-for i in range(0, int(fs / chunk * seconds)):
-    data = stream.read(chunk)
-    frames.append(data)
+# Store data in chunks for X seconds
+try:
+    while True:
+        data = stream.read(chunk)
+        frames.append(data)
+except KeyboardInterrupt:
+    pass
+
+
+
+# print(len(frames))
 
 # Stop and close the stream 
 stream.stop_stream()

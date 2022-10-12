@@ -27,8 +27,10 @@ file_save_loaction = "/home/nathan/Videos/RingRecord/"
 # set a variable for the fourcc video codec
 fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
 
+# how many seconds to save
+seconds = 5
 # this is the video in a buffer storing past 10 seconds.
-frames = deque(maxlen=(5 * fps))
+frames = deque(maxlen=(seconds * fps))
 
 # Will the video save by default?
 doYouWantToSave = True
@@ -64,10 +66,10 @@ while (True):  # Once per frame
     # desired button of your choice
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-    if cv2.waitKey(1) & 0xFF == ord('y'):
+    elif cv2.waitKey(1) & 0xFF == ord('y'):
         doYouWantToSave = True
         print("Saving video on end. ")
-    if cv2.waitKey(1) & 0xFF == ord('n'):
+    elif cv2.waitKey(1) & 0xFF == ord('n'):
         doYouWantToSave = False
         print("Not saving on end.")
 
