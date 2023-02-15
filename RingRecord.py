@@ -19,62 +19,63 @@ import ffmpeg
 #       GENERAL VARIABLES
 #
 #
+def initializeRecordingVariables(webcamIndex:int, secondsToSave:int):
+    # set a variable to store file save location
+    file_save_location = "/home/nathan/Videos/RingRecord/"
+    audio_filename = ""
+    video_filename = ""
 
-# set a variable to store file save location
-file_save_location = "/home/nathan/Videos/RingRecord/"
-audio_filename = ""
-video_filename = ""
+    #
+    #
+    #       VIDEO VARIABLES
+    #
+    #
 
-#
-#
-#       VIDEO VARIABLES
-#
-#
-
-# define a video capture object
-vid = cv2.VideoCapture(0) #1 webcam, 2 OBS vcam
-# When 0 is placed in as the parameter to VideoCapture(), this connects to the default webcam of our computer
-
-
-# set width and height of imported video to variables
-width = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
-height = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-# try getting FPS
-fps_float = vid.get(cv2.CAP_PROP_FPS)
-fps = int(fps_float)
-# print(fps) # print FPS to terminal
+    # define a video capture object
+    vid = cv2.VideoCapture(webcamIndex) 
+    # When 0 is placed in as the parameter to VideoCapture(), this connects to the default webcam of our computer
 
 
-# set a variable for the fourcc video codec
-fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    # set width and height of imported video to variables
+    width = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-# Will the video save by default?
-doYouWantToSave = True
+    # try getting FPS from camera
+    fps_float = vid.get(cv2.CAP_PROP_FPS)
+    fps = int(fps_float)
+    # print(fps) # print FPS to terminal
 
-#
-#
-#       AUDIO VARIABLES
-#
-#
-chunk = 1024  # Record in chunks of 1024 samples
-sample_format = pyaudio.paInt16  # 16 bits per sample
-channels = 2
-fs = 44100  # Record at 44100 samples per second
-seconds = 30
+
+    # set a variable for the fourcc video codec
+    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+
+    # Will the video you clip save by default?
+    doYouWantToSave = True
+
+    #
+    #
+    #       AUDIO VARIABLES
+    #
+    #
+    chunk = 1024  # Record in chunks of 1024 samples
+    sample_format = pyaudio.paInt16  # 16 bits per sample
+    channels = 2
+    fs = 44100  # Record at 44100 samples per second
+
+    # how long each clip should be
+    seconds =  secondsToSave
 
 def start_recording_video():
     # notify thread that video_filename is globale
     global video_filename
     # Will the video save by default?
     doYouWantToSave = True
-    
+
     # this is the video in a buffer storing past 10 seconds.
     vid_frames = deque(maxlen=(seconds * fps))
 
-
     def save_to_vid(video):
-        global video_filename #notify method that video_filename is global
+        global video_filename  # notify method that video_filename is global
 
         # get current date and time for filename
         now = datetime.now()
@@ -86,7 +87,6 @@ def start_recording_video():
             writer.write(frame)
         writer.release()
         print("Done writing video!")
-
 
     while (recording.is_set()):  # Once per frame
 
@@ -111,23 +111,21 @@ def start_recording_video():
 #            doYouWantToSave = False
 #            print("Not saving on end.")
 
-
     # After the loop release the cap object
     vid.release()
     # Destroy all the windows
     cv2.destroyAllWindows()
 
-
     if doYouWantToSave:
         save_to_vid(vid_frames)
-        
+
     else:
         del vid_frames
 
 
-def start_recording_audio(): 
+def start_recording_audio():
     p = pyaudio.PyAudio()  # Create an interface to PortAudio
-    global audio_filename # notify thread that audio_filename is global
+    global audio_filename  # notify thread that audio_filename is global
 
     print('Recording audio...')
 
@@ -135,27 +133,26 @@ def start_recording_audio():
                     channels=channels,
                     rate=fs,
                     frames_per_buffer=chunk,
-                    input=True) 
+                    input=True)
 
-    frames = deque(maxlen=int(fs / chunk * seconds))  # Initialize array to store frames
+    # Initialize array to store frames
+    frames = deque(maxlen=int(fs / chunk * seconds))
 
     # Store data in chunks for X seconds
-    #try:
+    # try:
     #    while True:
     #        data = stream.read(chunk)
     #       frames.append(data)
-    #except KeyboardInterrupt:
+    # except KeyboardInterrupt:
     #    pass
 
     while (recording.is_set()):
-            data = stream.read(chunk)
-            frames.append(data)
-
-
+        data = stream.read(chunk)
+        frames.append(data)
 
     # print(len(frames))
 
-    # Stop and close the stream 
+    # Stop and close the stream
     stream.stop_stream()
     stream.close()
     # Terminate the PortAudio interface
@@ -175,11 +172,11 @@ def start_recording_audio():
     wf.writeframes(b''.join(frames))
     wf.close()
 
-
-    
     print("Saved audio at: " + audio_filename)
 
+
 def record_video_and_audio():
+    global recording
     # create recording event
     recording = threading.Event()
     recording.set()
@@ -207,11 +204,10 @@ def record_video_and_audio():
     t2.join()
 
     # Combine audio and video files into one file
-    
+
     input_video = ffmpeg.input(video_filename)
 
     input_audio = ffmpeg.input(audio_filename)
-
 
     # get current date and time for filename
     now = datetime.now()
@@ -221,13 +217,26 @@ def record_video_and_audio():
 
     ffmpeg.concat(input_video, input_audio, v=1, a=1).output(combined_filename).run()
 
-    #print(video_filename)
-    #print(audio_filename)
+    # print(video_filename)
+    # print(audio_filename)
     print(combined_filename)
-
 
     # both threads completely executed
     print("DONE WITH THREADS!")
 
-if __name__ =="__main__":
-    record_video_and_audio()
+
+def getFirstAvailableCamera():
+    
+    for i in range(10):
+        cap = cv2.VideoCapture(i)
+        if (cap is None or not cap.isOpened()):
+            print('Camera is not available on source ', i)
+            # return i
+        else:
+            print('Available camera on source ', i)
+            return i
+
+
+if __name__ == "__main__":
+    
+    firstCamera = getFirstAvailableCamera()
