@@ -10,7 +10,9 @@ import pyaudio
 import wave
 import threading
 import ffmpeg
-
+# from PyQT5 import QTWidgets
+# from PyQT5.QTWidgets import QApplication, QMainWindow
+# import sys
 
 #
 #
@@ -30,7 +32,7 @@ video_filename = ""
 #
 
 # define a video capture object
-vid = cv2.VideoCapture(0)
+vid = cv2.VideoCapture(0) #1 webcam, 2 OBS vcam
 # When 0 is placed in as the parameter to VideoCapture(), this connects to the default webcam of our computer
 
 
@@ -59,7 +61,7 @@ chunk = 1024  # Record in chunks of 1024 samples
 sample_format = pyaudio.paInt16  # 16 bits per sample
 channels = 2
 fs = 44100  # Record at 44100 samples per second
-seconds = 5
+seconds = 30
 
 def start_recording_video():
     # notify thread that video_filename is globale
@@ -133,7 +135,7 @@ def start_recording_audio():
                     channels=channels,
                     rate=fs,
                     frames_per_buffer=chunk,
-                    input=True)
+                    input=True) 
 
     frames = deque(maxlen=int(fs / chunk * seconds))  # Initialize array to store frames
 
@@ -177,7 +179,7 @@ def start_recording_audio():
     
     print("Saved audio at: " + audio_filename)
 
-if __name__ =="__main__":
+def record_video_and_audio():
     # create recording event
     recording = threading.Event()
     recording.set()
@@ -226,3 +228,6 @@ if __name__ =="__main__":
 
     # both threads completely executed
     print("DONE WITH THREADS!")
+
+if __name__ =="__main__":
+    record_video_and_audio()
